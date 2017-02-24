@@ -1,13 +1,19 @@
+import json
+import re
 import numpy as np
+from sys import argv
 from collections import namedtuple
 from matplotlib import pyplot as plt
-import json
 
 
 # t = namedtuple('PLOT RANGE', ['Y_MIN', 'Y_MAX', 'Y_COUNT'])
 # PLOT_RANGE = t(Y_MIN=0, Y_MAX=2500, Y_COUNT=2501)
 def get_filenames():
-    pass
+    if argv[1] == '--many':
+        filename = [arg for arg in argv[1:]]
+    else:
+        filename = argv[1]
+    return filename
 
 
 def get_headers(filename):
@@ -17,8 +23,15 @@ def get_headers(filename):
 
 
 def get_rid_of_numbers(headers):
-    translator = {ord(ch): None for ch in '0123456789'}
-    return [(h.translate(translator)).split('.')[0] for h in headers[1:]]
+    '''
+    This is for python 2.X compatibility
+     because translate method changed in python 3.X
+    '''
+    try:
+        translator = {ord(ch): None for ch in '0123456789'}
+        return [(h.translate(translator)).split('.')[0] for h in headers[1:]]
+    except TypeError:
+        return [re.sub(r'\d+', '', head).split('.')[0] for head in headers[1:]]
 
 
 def load_all_object_measurements(data, start_index, end_index):
@@ -50,7 +63,7 @@ def build_queryset(headers, unique_headers):
     return queryset
 
 
-def get_arrays_dict(filename, queryset):
+def get_arrays_dict(filename, queryset, unique):
     data = np.loadtxt(filename, skiprows=1)
     arrays = {}
     for i, indices in enumerate(queryset):
@@ -82,7 +95,7 @@ def setup_plot(title, y):
     plt.ylim([0., 1.])
     plt.title(title)
     plt.legend()
-    plt.savefig(title+'.pdf', format='pdf')
+    plt.savefig(title + '.pdf', format='pdf')
     plt.clf()
 
 
@@ -107,23 +120,33 @@ def generate_statistics(arrays_dict, fnm='statistics.json'):
         json.dump(output, outfile, indent=4)
 
 
-filename = 'pkt_21-25.txt'
-data = np.loadtxt(filename, skiprows=1)
-labels = get_headers(filename)
-results = get_rid_of_numbers(labels)
-# print ('Translated:', results)
-print('Unique_headers:', get_unique_headers(results))
-unique = get_unique_headers(results)
-# print ('Queryset:', build_queryset(results,unique))
-queryset = build_queryset(results, unique)
-arrays = get_arrays_dict(filename, queryset)
-generate_statistics(arrays)
-for k, v in arrays.items():
-    print(k, v.shape)
-    rr = insert_zeros(v)
-    print (rr, rr.shape)
-    arr = average_measurement(rr)
-    #averaged = np.mean(rr, axis=1)
-    #print(averaged)
-    setup_plot(k, arr)
-    # rr.tofile(k, sep='\t')
+def work_interactive(filename):
+    labels = get_headers(filename)
+    results = get_rid_of_numbers(labels)
+    unique = get_unique_headers(results)
+    queryset = build_queryset(results, unique)
+    arrays = get_arrays_dict(filename, queryset, unique)
+    interactive_arrays = {}
+    for k, v in arrays.items():
+        array = insert_zeros(v)
+        av_array = average_measurement(array)
+        interactive_arrays[k] = av_array
+    return interactive_arrays
+
+
+def _run():
+    filename = get_filenames()
+    labels = get_headers(filename)
+    results = get_rid_of_numbers(labels)
+    unique = get_unique_headers(results)
+    queryset = build_queryset(results, unique)
+    arrays = get_arrays_dict(filename, queryset, unique)
+    generate_statistics(arrays)
+    for k, v in arrays.items():
+        arr = average_measurement(rr)
+        setup_plot(k, arr)
+
+
+if __name__ == '__main__':
+    _run()
+    print('Done.')
