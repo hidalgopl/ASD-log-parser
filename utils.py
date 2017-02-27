@@ -5,9 +5,10 @@ from sys import argv
 from collections import namedtuple
 from matplotlib import pyplot as plt
 
+t = namedtuple('PLOT_RANGE', ['Y_MIN', 'Y_MAX', 'Y_COUNT'])
+plot_range = t(Y_MIN=0, Y_MAX=2500, Y_COUNT=2501)
 
-# t = namedtuple('PLOT RANGE', ['Y_MIN', 'Y_MAX', 'Y_COUNT'])
-# PLOT_RANGE = t(Y_MIN=0, Y_MAX=2500, Y_COUNT=2501)
+
 def get_filenames():
     if argv[1] == '--many':
         filename = [arg for arg in argv[1:]]
@@ -40,10 +41,10 @@ def load_all_object_measurements(data, start_index, end_index):
 
 
 def find_start_end_indices(headers, value):
-    t = namedtuple('Indices', ['START_INDEX', 'END_INDEX'])
+    t_ind = namedtuple('Indices', ['START_INDEX', 'END_INDEX'])
     start_index = headers.index(value) + 1
     end_index = len(headers) - headers[::-1].index(value)
-    indices = t(START_INDEX=start_index, END_INDEX=end_index)
+    indices = t_ind(START_INDEX=start_index, END_INDEX=end_index)
     return indices
 
 
@@ -76,7 +77,7 @@ def insert_zeros(array):
     shape = (350, array.shape[1])
     zeros = np.zeros(shape)
     full_arr = np.append(zeros, array)
-    full_arr = full_arr.reshape(2501, array.shape[1])
+    full_arr = full_arr.reshape(plot_range.Y_COUNT, array.shape[1])
     return full_arr
 
 
@@ -86,15 +87,15 @@ def average_measurement(array):
 
 
 def setup_plot(title, y):
-    # x = np.linspace(PLOT_RANGE.Y_MIN, PLOT_RANGE.Y_MAX, PLOT_RANGE.Y_COUNT)
-    x = np.linspace(0, 2500, 2501)
+    x = np.linspace(plot_range.Y_MIN, plot_range.Y_MAX, plot_range.Y_COUNT)
     plt.plot(x, y, label='Spectral signature')
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Reflectance')
-    plt.xlim([0, 2500])
+    plt.xlim([plot_range.Y_MIN, plot_range.Y_MAX])
     plt.ylim([0., 1.])
     plt.title(title)
     plt.legend()
+    plt.grid()
     plt.savefig(title + '.pdf', format='pdf')
     plt.clf()
 
@@ -106,6 +107,7 @@ def plot_spectral(array, X):
 
 def generate_statistics(arrays_dict, fnm='statistics.json'):
     output = {}
+    fnm = '{}.json'.format(fnm.split('.')[0]+'_stats')
     for name, array in arrays_dict.items():
         point = {}
         point['Name'] = name
@@ -141,9 +143,10 @@ def _run():
     unique = get_unique_headers(results)
     queryset = build_queryset(results, unique)
     arrays = get_arrays_dict(filename, queryset, unique)
-    generate_statistics(arrays)
+    generate_statistics(arrays, fnm=filename)
     for k, v in arrays.items():
-        arr = average_measurement(rr)
+        extended_array = insert_zeros(v)
+        arr = average_measurement(extended_array)
         setup_plot(k, arr)
 
 
