@@ -1,6 +1,7 @@
 import json
 import re
 import numpy as np
+import vegetation_indices as vi
 from sys import argv
 from collections import namedtuple
 from matplotlib import pyplot as plt
@@ -91,7 +92,7 @@ def setup_plot(title, y):
     plt.plot(x, y, label='Spectral signature')
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Reflectance')
-    plt.xlim([plot_range.Y_MIN, plot_range.Y_MAX])
+    plt.xlim([350, plot_range.Y_MAX])
     plt.ylim([0., 1.])
     plt.title(title)
     plt.legend()
@@ -118,6 +119,7 @@ def generate_statistics(arrays_dict, fnm='statistics.json'):
         point['VARIANCE'] = np.var(array)
         point['MEDIAN'] = np.median(array)
         output[name] = point
+
     with open(fnm, 'w') as outfile:
         json.dump(output, outfile, indent=4)
 
@@ -144,12 +146,18 @@ def _run():
     queryset = build_queryset(results, unique)
     arrays = get_arrays_dict(filename, queryset, unique)
     generate_statistics(arrays, fnm=filename)
+    arrays_dict = {}
+
     for k, v in arrays.items():
         extended_array = insert_zeros(v)
         arr = average_measurement(extended_array)
+        arrays_dict[k] = arr
         setup_plot(k, arr)
+    #print(arrays_dict)
+    vi.generate_indices(arrays_dict)
 
 
 if __name__ == '__main__':
     _run()
     print('Done.')
+
