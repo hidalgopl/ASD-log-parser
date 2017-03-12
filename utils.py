@@ -1,6 +1,9 @@
+from __future__ import print_function
 import json
+import csv
 import re
 import numpy as np
+import pandas as pd
 import vegetation_indices as vi
 from sys import argv
 from collections import namedtuple
@@ -87,6 +90,12 @@ def average_measurement(array):
     return averaged
 
 
+def st_dev_measurement(array):
+    st_dev = np.std(array, axis=1)
+    #print(st_dev)
+    return st_dev
+
+
 def setup_plot(title, y):
     x = np.linspace(plot_range.Y_MIN, plot_range.Y_MAX, plot_range.Y_COUNT)
     plt.plot(x, y, label='Spectral signature')
@@ -97,7 +106,9 @@ def setup_plot(title, y):
     plt.title(title)
     plt.legend()
     plt.grid()
-    plt.savefig(title + '.pdf', format='pdf')
+    fnm = title + '.pdf'
+    plt.savefig(fnm, format='pdf')
+    print('Plot {} exported to: {}'.format(title, fnm))
     plt.clf()
 
 
@@ -107,7 +118,7 @@ def plot_spectral(array, X):
 
 
 def generate_statistics(arrays_dict, fnm='statistics.json'):
-    output = {}
+    output = []
     fnm = '{}.json'.format(fnm.split('.')[0]+'_stats')
     for name, array in arrays_dict.items():
         point = {}
@@ -118,7 +129,7 @@ def generate_statistics(arrays_dict, fnm='statistics.json'):
         point['MEAN'] = np.mean(array)
         point['VARIANCE'] = np.var(array)
         point['MEDIAN'] = np.median(array)
-        output[name] = point
+        output.append(point)
 
     with open(fnm, 'w') as outfile:
         json.dump(output, outfile, indent=4)
@@ -138,6 +149,23 @@ def work_interactive(filename):
     return interactive_arrays
 
 
+def generate_csv(arrays, filename='measurements.csv'):
+    output = [['wavelength', 'average', 'st_dev']]
+    fnm = filename.split('.')[0]+'_csv.csv'
+    print ('Generating csv file', end='')
+    for k, v in arrays.items():
+        print('.', end='')
+        averaged = average_measurement(v)
+        st_deved = st_dev_measurement(v)
+        output.append([k, '', ''])
+        for i in range(len(averaged)):
+            output.append([i+350, averaged[i], st_deved[i]])
+    with open(fnm, "wb") as f:
+        writer = csv.writer(f)
+        writer.writerows(output)
+        print('Exported to: {}'.format(fnm))
+
+
 def _run():
     filename = get_filenames()
     labels = get_headers(filename)
@@ -146,6 +174,7 @@ def _run():
     queryset = build_queryset(results, unique)
     arrays = get_arrays_dict(filename, queryset, unique)
     generate_statistics(arrays, fnm=filename)
+    generate_csv(arrays, filename=filename)
     arrays_dict = {}
 
     for k, v in arrays.items():

@@ -1,5 +1,7 @@
+from __future__ import print_function
 import sys
 import inspect
+import csv
 import numpy as np
 import json
 from math import sqrt
@@ -71,9 +73,16 @@ def count_all(arr):
 
 def generate_indices(arrays_dict, fnm='indices.json'):
     fnm = '{}.json'.format(fnm.split('.')[0] + '_indices')
-    output = {}
+    output = []
+    print('Calculating vegetation indices', end='')
     for name, array in arrays_dict.items():
-        output[name] = count_all(array)
+        print('.', end='')
+        output.append([name, count_all(array)])
     with open(fnm, 'w') as outfile:
         json.dump(output, outfile, indent=4)
+        print('Exported to: {}'.format(fnm))
+    with open(fnm.split('.')[0]+'.csv', "wb") as f:
+        writer = csv.writer(f)
+        writer.writerows(output)
+        print('Exported to: {}'.format(fnm.split('.')[0]+'.csv'))
 
