@@ -3,7 +3,6 @@ import json
 import csv
 import re
 import numpy as np
-import pandas as pd
 import vegetation_indices as vi
 from sys import argv
 from collections import namedtuple
@@ -92,7 +91,7 @@ def average_measurement(array):
 
 def st_dev_measurement(array):
     st_dev = np.std(array, axis=1)
-    #print(st_dev)
+    # print(st_dev)
     return st_dev
 
 
@@ -119,7 +118,7 @@ def plot_spectral(array, X):
 
 def generate_statistics(arrays_dict, fnm='statistics.json'):
     output = []
-    fnm = '{}.json'.format(fnm.split('.')[0]+'_stats')
+    fnm = '{}.json'.format(fnm.split('.')[0] + '_stats')
     for name, array in arrays_dict.items():
         point = {}
         point['Name'] = name
@@ -151,19 +150,32 @@ def work_interactive(filename):
 
 def generate_csv(arrays, filename='measurements.csv'):
     output = [['wavelength', 'average', 'st_dev']]
-    fnm = filename.split('.')[0]+'_csv.csv'
-    print ('Generating csv file', end='')
+    fnm = filename.split('.')[0] + '_csv.csv'
+    print('Generating csv file', end='')
     for k, v in arrays.items():
         print('.', end='')
         averaged = average_measurement(v)
         st_deved = st_dev_measurement(v)
         output.append([k, '', ''])
         for i in range(len(averaged)):
-            output.append([i+350, averaged[i], st_deved[i]])
+            output.append([i + 350, averaged[i], st_deved[i]])
     with open(fnm, "wb") as f:
         writer = csv.writer(f)
         writer.writerows(output)
         print('Exported to: {}'.format(fnm))
+
+
+def generate_indices_csv(arrays, filename='indices.csv'):
+    fnm = filename.split('.')[0] + '_indicescsv.csv'
+    indices_array = vi.generate_indices(arrays)
+    to_write = [i[1] for i in indices_array]
+    headers = [i for i in to_write[0]]
+    with open(fnm, "wb") as f:
+        writer = csv.DictWriter(f, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(to_write)
+        writer.writerow({})
+        print('Vegatation indices exported to:{}'.format(fnm))
 
 
 def _run():
@@ -182,11 +194,10 @@ def _run():
         arr = average_measurement(extended_array)
         arrays_dict[k] = arr
         setup_plot(k, arr)
-    #print(arrays_dict)
     vi.generate_indices(arrays_dict)
+    generate_indices_csv(arrays_dict, filename=filename)
 
 
 if __name__ == '__main__':
     _run()
     print('Done.')
-

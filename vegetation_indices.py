@@ -1,8 +1,6 @@
 from __future__ import print_function
 import sys
 import inspect
-import csv
-import numpy as np
 import json
 from math import sqrt
 from collections import OrderedDict
@@ -13,7 +11,8 @@ def mcari(arr):
 
 
 def mcari2(arr):
-    return (1.5 * (2.5 * (arr[800] - arr[670]) - 1.3 * (arr[800] - arr[550])))/sqrt((2 * arr[800] + 1) ** 2 - (6 * arr[800] - 5 * sqrt(arr[670])) - 0.5)
+    return (1.5 * (2.5 * (arr[800] - arr[670]) - 1.3 * (arr[800] - arr[550]))) / sqrt(
+        (2 * arr[800] + 1) ** 2 - (6 * arr[800] - 5 * sqrt(arr[670])) - 0.5)
 
 
 def mrendvi(arr):
@@ -63,9 +62,10 @@ def list_functions(mod):
             if is_mod_function(mod, func) and func.__name__ not in itself]
 
 
-def count_all(arr):
+def count_all(arr, name):
     functions = list_functions(sys.modules[__name__])
     indices = OrderedDict()
+    indices['Point'] = name
     for foo in functions:
         indices[foo] = globals()[foo](arr)
     return indices
@@ -77,12 +77,9 @@ def generate_indices(arrays_dict, fnm='indices.json'):
     print('Calculating vegetation indices', end='')
     for name, array in arrays_dict.items():
         print('.', end='')
-        output.append([name, count_all(array)])
+        output.append([name, count_all(array, name)])
     with open(fnm, 'w') as outfile:
         json.dump(output, outfile, indent=4)
         print('Exported to: {}'.format(fnm))
-    with open(fnm.split('.')[0]+'.csv', "wb") as f:
-        writer = csv.writer(f)
-        writer.writerows(output)
-        print('Exported to: {}'.format(fnm.split('.')[0]+'.csv'))
+    return output
 
