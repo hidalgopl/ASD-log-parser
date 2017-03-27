@@ -103,7 +103,9 @@ def setup_plot(title, y):
     plt.xlim([350, plot_range.Y_MAX])
     plt.ylim([0., 1.])
     plt.title(title)
-    plt.legend()
+    plt.legend(loc='best')
+    plt.yticks(np.arange(0.0, 1.1, 0.1))
+    plt.xticks(np.arange(350, plot_range.Y_MAX + 100, 215))
     plt.grid()
     fnm = title + '.pdf'
     plt.savefig(fnm, format='pdf')
