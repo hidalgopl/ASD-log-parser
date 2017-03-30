@@ -12,7 +12,7 @@ t = namedtuple('PLOT_RANGE', ['Y_MIN', 'Y_MAX', 'Y_COUNT'])
 plot_range = t(Y_MIN=0, Y_MAX=2500, Y_COUNT=2501)
 
 
-def get_filenames():
+def get_filename():
     if argv[1] == '--many':
         filename = [arg for arg in argv[1:]]
     else:
@@ -27,10 +27,10 @@ def get_headers(filename):
 
 
 def get_rid_of_numbers(headers):
-    '''
+    """
     This is for python 2.X compatibility
      because translate method changed in python 3.X
-    '''
+    """
     try:
         translator = {ord(ch): None for ch in '0123456789'}
         return [(h.translate(translator)).split('.')[0] for h in headers[1:]]
@@ -97,13 +97,19 @@ def st_dev_measurement(array):
 
 def setup_plot(title, y):
     x = np.linspace(plot_range.Y_MIN, plot_range.Y_MAX, plot_range.Y_COUNT)
-    plt.plot(x, y, label='Spectral signature')
+    try:
+        array_list = np.hsplit(y, y.shape[1])
+        for k in array_list:
+            arr = np.array(k)
+            plt.plot(x, arr, label='Spectral signature')
+    except IndexError:
+        plt.plot(x, y, label='Spectral signature')
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Reflectance')
     plt.xlim([350, plot_range.Y_MAX])
     plt.ylim([0., 1.])
     plt.title(title)
-    plt.legend(loc='best')
+    # plt.legend(loc='best')
     plt.yticks(np.arange(0.0, 1.1, 0.1))
     plt.xticks(np.arange(350, plot_range.Y_MAX + 100, 215))
     plt.grid()
@@ -113,24 +119,19 @@ def setup_plot(title, y):
     plt.clf()
 
 
-def plot_spectral(array, X):
-    plt.plot(X, array)
-    pass
-
-
 def generate_statistics(arrays_dict, fnm='statistics.json'):
     output = []
     fnm = '{}.json'.format(fnm.split('.')[0] + '_stats')
     for name, array in arrays_dict.items():
-        point = {}
-        point['Name'] = name
-        point['MIN'] = np.amin(array)
-        point['MAX'] = np.amax(array)
-        point['STDEV'] = np.std(array)
-        point['MEAN'] = np.mean(array)
-        point['VARIANCE'] = np.var(array)
-        point['MEDIAN'] = np.median(array)
-        output.append(point)
+        output.append({
+            'Name': name,
+            'MIN': np.amin(array),
+            'MAX': np.amax(array),
+            'STDEV': np.std(array),
+            'MEAN': np.mean(array),
+            'VARIANCE': np.var(array),
+            'MEDIAN': np.median(array),
+        })
 
     with open(fnm, 'w') as outfile:
         json.dump(output, outfile, indent=4)
@@ -181,7 +182,7 @@ def generate_indices_csv(arrays, filename='indices.csv'):
 
 
 def _run():
-    filename = get_filenames()
+    filename = get_filename()
     labels = get_headers(filename)
     results = get_rid_of_numbers(labels)
     unique = get_unique_headers(results)
@@ -195,7 +196,8 @@ def _run():
         extended_array = insert_zeros(v)
         arr = average_measurement(extended_array)
         arrays_dict[k] = arr
-        setup_plot(k, arr)
+        setup_plot(k, extended_array)
+        setup_plot(k + '_average', arr)
     vi.generate_indices(arrays_dict)
     generate_indices_csv(arrays_dict, filename=filename)
 
