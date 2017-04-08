@@ -9,7 +9,10 @@ from collections import namedtuple
 from matplotlib import pyplot as plt
 
 t = namedtuple('PLOT_RANGE', ['Y_MIN', 'Y_MAX', 'Y_COUNT'])
-plot_range = t(Y_MIN=0, Y_MAX=2500, Y_COUNT=2501)
+y_min = 0
+y_max = 2500
+y_count = 2501
+plot_range = t(Y_MIN=y_min, Y_MAX=y_max, Y_COUNT=y_count)
 
 
 def get_filename():
@@ -29,7 +32,7 @@ def get_headers(filename):
 def get_rid_of_numbers(headers):
     """
     This is for python 2.X compatibility
-     because translate method changed in python 3.X
+     because translate method has changed in python 3.X
     """
     try:
         translator = {ord(ch): None for ch in '0123456789'}
@@ -67,11 +70,11 @@ def build_queryset(headers, unique_headers):
     return queryset
 
 
-def get_arrays_dict(filename, queryset, unique):
+def get_arrays_dict(filename, queryset, unique_headers):
     data = np.loadtxt(filename, skiprows=1)
     arrays = {}
     for i, indices in enumerate(queryset):
-        name = unique[i]
+        name = unique_headers[i]
         arrays[name] = load_all_object_measurements(data, indices.START_INDEX, indices.END_INDEX)
     return arrays
 
