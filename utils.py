@@ -165,9 +165,14 @@ def generate_csv(arrays, filename='measurements.csv'):
         output.append([k, '', ''])
         for i in range(len(averaged)):
             output.append([i + 350, averaged[i], st_deved[i]])
-    with open(fnm, "wb") as f:
-        writer = csv.writer(f)
-        writer.writerows(output)
+    try:
+        with open(fnm, "wb") as f:
+            writer = csv.writer(f)
+            writer.writerows(output)
+    except TypeError:
+        with open(fnm, "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(output)
         print('Exported to: {}'.format(fnm))
 
 
@@ -176,11 +181,18 @@ def generate_indices_csv(arrays, filename='indices.csv'):
     indices_array = vi.generate_indices(arrays)
     to_write = [i[1] for i in indices_array]
     headers = [i for i in to_write[0]]
-    with open(fnm, "wb") as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        writer.writeheader()
-        writer.writerows(to_write)
-        writer.writerow({})
+    try:
+        with open(fnm, "wb") as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(to_write)
+            writer.writerow({})
+    except TypeError:
+        with open(fnm, "w") as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(to_write)
+            writer.writerow({})
         print('Vegatation indices exported to:{}'.format(fnm))
 
 
