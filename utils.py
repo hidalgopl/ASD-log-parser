@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import json
 import csv
 import re
@@ -122,6 +122,19 @@ def setup_plot(title, y):
     plt.clf()
 
 
+def remove_calibration_measurements(arrays_dict):
+    cleaned_arrays = {}
+    for k, v in arrays_dict.items():
+        v1 = []
+        for col in range(v.shape[1]):
+            if (v[:, col]).mean() <= .9:
+                v1.append(v[:, col])
+        v1 = np.array(v1)
+        v1 = v1.T
+        cleaned_arrays[k] = np.array(v1)
+    return cleaned_arrays
+
+
 def generate_statistics(arrays_dict, fnm='statistics.json'):
     output = []
     fnm = '{}.json'.format(fnm.split('.')[0] + '_stats')
@@ -203,6 +216,7 @@ def _run():
     unique = get_unique_headers(results)
     queryset = build_queryset(results, unique)
     arrays = get_arrays_dict(filename, queryset, unique)
+    arrays = remove_calibration_measurements(arrays)
     generate_statistics(arrays, fnm=filename)
     generate_csv(arrays, filename=filename)
     arrays_dict = {}
